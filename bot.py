@@ -27,7 +27,7 @@ except ImportError as e:
     logger.critical(f"Failed to import local modules: {e}")
     sys.exit(1)
 
-# Memory storage to track consecutive links per user: {(chat_id, user_id): count}
+# In-memory tracking cache for link streaks
 LINK_SPAM_TRACKER = {}
 
 class HealthCheckHandler(BaseHTTPRequestHandler):
@@ -49,15 +49,8 @@ def run_dummy_web_server():
 # 🛑 ANTI-LINK FILTER & AUTO-MUTE ENGINE
 # ==========================================
 async def group_link_guardian_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """
-    Scans messages for URLs. Non-admins have links deleted immediately.
-    If they send more than 5 links continuously, they are MUTED instantly.
-    """
     message = update.effective_message
-    if not message or not message.text:
-        return
-    
-    if update.effective_chat.type == "private":
+    if not message or not message.text or update.effective_chat.type == "private":
         return
 
     user = update.effective_user
@@ -65,60 +58,50 @@ async def group_link_guardian_handler(update: Update, context: ContextTypes.DEFA
     incoming_text = message.text.lower()
     
     has_link = "http://" in incoming_text or "https://" in incoming_text or "t.me/" in incoming_text or ".com" in incoming_text or ".net" in incoming_text or ".org" in incoming_text
-
     tracker_key = (chat.id, user.id)
 
     if has_link:
-        # Check admin credentials
-        is_authorized = await check_admin_privileges(update, context)
-        if is_authorized:
+        if await check_admin_privileges(update, context):
             return  
 
-        # 1. Delete the link message immediately
         try:
             await message.delete()
         except Exception as e:
             logger.error(f"Failed to delete link: {e}")
 
-        # 2. Update the consecutive link tracking count
         LINK_SPAM_TRACKER[tracker_key] = LINK_SPAM_TRACKER.get(tracker_key, 0) + 1
         current_strikes = LINK_SPAM_TRACKER[tracker_key]
 
-        # 3. Trigger Mute if strikes cross 5
         if current_strikes > 5:
-            # Reset tracker for the user
             LINK_SPAM_TRACKER[tracker_key] = 0
-            
-            # Mute the user in the group (remove message sending rights)
             try:
-                mute_permissions = ChatPermissions(can_send_messages=False, can_send_media_messages=False, can_send_other_messages=False)
+                mute_permissions = ChatPermissions(
+                    can_send_messages=False, 
+                    can_send_media_messages=False, 
+                    can_send_other_messages=False
+                )
                 await context.bot.restrict_chat_member(chat_id=chat.id, user_id=user.id, permissions=mute_permissions)
                 muted_status = "⚠️ <b>USER MUTED FOR SPAM</b>"
             except Exception as mute_err:
-                logger.error(f"Failed to mute user: {mute_err}")
-                muted_status = "❌ <b>FAILED TO MUTE (Check Bot Permissions)</b>"
+                logger.error(f"Mute failure: {mute_err}")
+                muted_status = "❌ <b>FAILED TO MUTE (Check Perms)</b>"
 
-            # Send a detailed report to your private owner chat
             report_log = (
-                f"🚨 <b><u>LINK SPAM PUNISHMENT CRADLE</u></b>\n\n"
+                f"🚨 <b><u>LINK SPAM PUNISHMENT TRIGGERED</u></b>\n\n"
                 f"• <b>ᴜsᴇʀ:</b> <a href='tg://user?id={user.id}'>{user.first_name}</a>\n"
                 f"• <b>ᴜsᴇʀɴᴀᴍᴇ:</b> @{user.username if user.username else 'None'}\n"
-                f"• <b>ᴜsᴇʀ ɪᴅ:</b> <code>{user.id}</code>\n"
                 f"• <b>ɢʀ0ᴜᴘ:</b> {chat.title} (<code>{chat.id}</code>)\n"
                 f"• <b>sᴛᴀᴛᴜs:</b> {muted_status}\n\n"
-                f"💬 <i>This user sent more than 5 links continuously without sending normal text.</i>"
+                f"💬 <i>User restricted after posting more than 5 sequential links.</i>"
             )
-            
             try:
                 await context.bot.send_message(chat_id=config.MASTER_OWNER_ID, text=report_log, parse_mode=ParseMode.HTML)
-            except Exception as e:
-                logger.warning(f"Could not alert Master ID: {e}")
+            except Exception:
+                pass
         else:
-            # Report a regular single link deletion to the owner
             report_log = (
                 f"🚨 <b><u>ᴜɴᴀᴜᴛʜ0ʀɪᴢᴇᴅ ʟɪɴᴋ ᴅᴇᴛᴇᴄᴛᴇᴅ</u></b>\n\n"
                 f"• <b>ᴜsᴇʀ:</b> <a href='tg://user?id={user.id}'>{user.first_name}</a>\n"
-                f"• <b>ᴜsᴇʀɴᴀᴍᴇ:</b> @{user.username if user.username else 'None'}\n"
                 f"• <b>sᴛʀɪᴋᴇs:</b> <code>{current_strikes}/5</code>\n"
                 f"• <b>ɢʀ0ᴜᴘ:</b> {chat.title}\n\n"
                 f"💬 <b>ʟɪɴᴋ sᴇɴᴛ:</b>\n<code>{message.text}</code>"
@@ -128,7 +111,6 @@ async def group_link_guardian_handler(update: Update, context: ContextTypes.DEFA
             except Exception:
                 pass
     else:
-        # If the user sends any normal text message without a link, reset their continuous link strike back to 0
         if tracker_key in LINK_SPAM_TRACKER:
             LINK_SPAM_TRACKER[tracker_key] = 0
 
@@ -272,24 +254,19 @@ def main():
     application = Application.builder().token(config.BOT_TOKEN).build()
     application.job_queue.run_once(lambda ctx: init_db(), when=0)
 
-    # Core System Hooks
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("about", about_command))
     application.add_handler(CommandHandler("id", id_command))
 
-    # Administrative Filters Hooks
     application.add_handler(CommandHandler("filter", set_filter_command))
     application.add_handler(CommandHandler("filters", view_filters_command))
     application.add_handler(CommandHandler("del", delete_filter_command))
     application.add_handler(CommandHandler("delall", delete_all_filters_command))
 
-    # Event Router Listeners
     application.add_handler(CallbackQueryHandler(master_callback_query_router))
     
     application.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS | filters.CHAT, welcome_new_members_handler), group=1)
-    
-    # Run the Link spam tracker pipeline
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, group_link_guardian_handler), group=2)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, global_text_filter_listener), group=3)
 
