@@ -8,14 +8,22 @@ logger = logging.getLogger(__name__)
 
 async def welcome_new_members_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ Handles member arrivals and clears automated system join or approval badges """
+    
+    # Check if this is an explicit join request approval background update
+    if update.chat_join_request:
+        return # Handled at routing level if needed, but we focus on message text cleanups
+
     message = update.message
     if not message:
         return
 
     is_new_member = bool(message.new_chat_members)
-    is_accepted_tag = bool(message.chat_shared or hasattr(message, 'successful_payment') or (message.text and "accepted into the group" in message.text.lower()))
     
-    if is_new_member or is_accepted_tag:
+    # Enhanced pattern matching to sweep "accepted into the group" service messages
+    incoming_text = message.text.lower() if message.text else ""
+    is_accepted_tag = "accepted into the group" in incoming_text or "joined the group" in incoming_text
+    
+    if is_new_member or is_accepted_tag or message.delete_chat_photo:
         try:
             await context.bot.delete_message(chat_id=message.chat_id, message_id=message.message_id)
             logger.info(f"Erased system join/approval badge in chat {message.chat_id}")
