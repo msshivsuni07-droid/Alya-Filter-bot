@@ -148,7 +148,7 @@ async def master_callback_query_router(update: Update, context: ContextTypes.DEF
     elif callback_data == "cb_back_main":
         welcome_text = (
             "✨ <b>ᴡᴇʟᴄ0ᴍᴇ ᴛ0 ᴀʟʏᴀ ғɪʟᴛᴇʀ sᴛᴀᴛɪ0ɴ</b>\n\n"
-            "ᴜsᴇ ᴛʜᴇ ᴅʏɴᴀᴍɪᴄ sᴇʟᴇᴄᴛɪ0ɴ ʙ0ᴀʀ裝 ᴘᴀɴᴇʟ ᴜɴᴅᴇʀɴᴇᴀᴛʜ ᴛ0 ʟ00ᴋ ᴜᴘ sʏsᴛᴇᴍ "
+            "ᴜsᴇ ᴛʜᴇ ᴅʏɴᴀᴍɪᴄ sᴇʟᴇᴄᴛɪ0ɴ ʙ0ᴀʀᴅ ᴘᴀɴᴇʟ ᴜɴᴅᴇʀɴᴇᴀᴛʜ ᴛ0 ʟ00ᴋ ᴜᴘ sʏsᴛᴇᴍ "
             "ɪɴғ0ʀᴍᴀᴛ0ɴ ᴍᴇᴛʀɪᴄs 0ʀ ᴄ0ɴғɪɢᴜʀᴀᴛɪ0ɴs."
         )
         await query.edit_message_caption(caption=welcome_text, reply_markup=get_start_keyboard(), parse_mode=ParseMode.HTML)
