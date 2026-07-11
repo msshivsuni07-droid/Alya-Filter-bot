@@ -16,7 +16,9 @@ def get_start_keyboard():
 async def master_callback_query_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data = query.data
-    await query.answer()
+    
+    # ANSWER ALWAYS WITH SHOW_ALERT=FALSE
+    await query.answer(show_alert=False)
 
     if data == "about":
         await query.edit_message_caption(caption="ℹ️ <b>ᴀʟʏᴀ sʏsᴛᴇᴍ sᴛᴀᴛɪ0ɴ</b>\n\nFramework: python-telegram-bot v21.1", 
