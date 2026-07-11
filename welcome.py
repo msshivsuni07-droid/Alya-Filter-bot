@@ -41,6 +41,5 @@ async def welcome_new_members_handler(update: Update, context: ContextTypes.DEFA
                 f"s0 ɢʟᴀᴅ ʏ0ᴜ ᴊ0ɪɴᴇᴅ ᴜs. ᴘʟᴇᴀsᴇ sᴛᴀʏ ᴀᴄᴛɪᴠᴇ ᴀɴᴅ ʀᴇsᴘᴇᴄᴛ ᴛʜᴇ ɢʀ0ᴜᴘ ʀᴜʟᴇs!"
             )
 
-            callback_data'
-            keyboard = [[InlineKeyboardButton("🤖 Open Main Panel", callback_data="help")]]
+            keyboard = [[InlineKeyboardButton("🤖 Open Main Panel", callback_data="cmd_help")]]
             reply_markup = InlineKeyboardMarkup(keyboard)
