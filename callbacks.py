@@ -16,7 +16,7 @@ async def master_callback_query_router(update, context):
     query = update.callback_query
     data = query.data
     
-    # We use a silent answer to stop the loading icon without triggering an alert
+    # Force silent response
     await query.answer()
 
     if data == "about":
@@ -26,7 +26,7 @@ async def master_callback_query_router(update, context):
         await query.edit_message_caption(caption="❓ <b>ʜᴇʟᴘ ᴍᴀɴᴜᴀʟ</b>", 
                                          reply_markup=get_start_keyboard(), parse_mode=ParseMode.HTML)
     elif data == "commands":
-        # No alert parameter is used here
+        # No alert, no pop-up
         await query.edit_message_caption(caption="📂 <b>ᴄ0ᴍᴍᴀɴᴅs:</b>\n\n/filter, /filters, /del, /id", 
                                          reply_markup=get_start_keyboard(), parse_mode=ParseMode.HTML)
     elif data == "close":
