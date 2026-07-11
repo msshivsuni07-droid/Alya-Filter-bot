@@ -41,10 +41,6 @@ async def welcome_new_members_handler(update: Update, context: ContextTypes.DEFA
                 f"s0 ɢʟᴀᴅ ʏ0ᴜ ᴊ0ɪɴᴇᴅ ᴜs. ᴘʟᴇᴀsᴇ sᴛᴀʏ ᴀᴄᴛɪᴠᴇ ᴀɴᴅ ʀᴇsᴘᴇᴄᴛ ᴛʜᴇ ɢʀ0ᴜᴘ ʀᴜʟᴇs!"
             )
 
-            keyboard = [[InlineKeyboardButton("🤖 Open Main Panel", url=f"https://t.me/{(await context.bot.get_me()).username}?start=help")]]
+            callback_data'
+            keyboard = [[InlineKeyboardButton("🤖 Open Main Panel", callback_data="help")]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-
-            try:
-                await message.chat.reply_photo(photo=config.IMAGE_1, caption=welcome_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
-            except Exception:
-                await message.chat.reply_text(text=welcome_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
