@@ -17,8 +17,8 @@ async def master_callback_query_router(update: Update, context: ContextTypes.DEF
     query = update.callback_query
     data = query.data
     
-    # ANSWER ALWAYS WITH SHOW_ALERT=FALSE
-    await query.answer(show_alert=False)
+    # This completely disables all pop-up alerts instantly
+    await query.answer(text="", show_alert=False)
 
     if data == "about":
         await query.edit_message_caption(caption="ℹ️ <b>ᴀʟʏᴀ sʏsᴛᴇᴍ sᴛᴀᴛɪ0ɴ</b>\n\nFramework: python-telegram-bot v21.1", 
@@ -31,3 +31,6 @@ async def master_callback_query_router(update: Update, context: ContextTypes.DEF
                                          reply_markup=get_start_keyboard(), parse_mode=ParseMode.HTML)
     elif data == "close":
         await query.message.delete()
+    else:
+        # Catch-all for any older buttons so they don't trigger alerts
+        pass
