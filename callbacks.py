@@ -1,6 +1,5 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
-from telegram.ext import ContextTypes
 
 def get_start_keyboard():
     return InlineKeyboardMarkup([
@@ -13,24 +12,22 @@ def get_start_keyboard():
          InlineKeyboardButton("E", callback_data="close")]
     ])
 
-async def master_callback_query_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def master_callback_query_router(update, context):
     query = update.callback_query
     data = query.data
     
-    # This completely disables all pop-up alerts instantly
-    await query.answer(text="", show_alert=False)
+    # We use a silent answer to stop the loading icon without triggering an alert
+    await query.answer()
 
     if data == "about":
-        await query.edit_message_caption(caption="ℹ️ <b>ᴀʟʏᴀ sʏsᴛᴇᴍ sᴛᴀᴛɪ0ɴ</b>\n\nFramework: python-telegram-bot v21.1", 
+        await query.edit_message_caption(caption="ℹ️ <b>ᴀʟʏᴀ sʏsᴛᴇᴍ sᴛᴀᴛɪ0ɴ</b>", 
                                          reply_markup=get_start_keyboard(), parse_mode=ParseMode.HTML)
     elif data == "help":
-        await query.edit_message_caption(caption="❓ <b>ʜᴇʟᴘ ᴍᴀɴᴜᴀʟ</b>\n\nAdd bot to groups to enable moderation.", 
+        await query.edit_message_caption(caption="❓ <b>ʜᴇʟᴘ ᴍᴀɴᴜᴀʟ</b>", 
                                          reply_markup=get_start_keyboard(), parse_mode=ParseMode.HTML)
     elif data == "commands":
+        # No alert parameter is used here
         await query.edit_message_caption(caption="📂 <b>ᴄ0ᴍᴍᴀɴᴅs:</b>\n\n/filter, /filters, /del, /id", 
                                          reply_markup=get_start_keyboard(), parse_mode=ParseMode.HTML)
     elif data == "close":
         await query.message.delete()
-    else:
-        # Catch-all for any older buttons so they don't trigger alerts
-        pass
